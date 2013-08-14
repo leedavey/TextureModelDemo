@@ -1,7 +1,8 @@
 package com.bayninestudios.texturemodeldemo;
 
+import android.content.Context;
+
 import java.io.BufferedReader;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -13,20 +14,12 @@ import java.util.ArrayList;
 
 import javax.microedition.khronos.opengles.GL10;
 
-import org.xmlpull.v1.XmlPullParserException;
-
-import android.content.Context;
-import android.content.res.XmlResourceParser;
-import android.util.Log;
-
-public class DrawModel
-{
+public class DrawModel {
     private final FloatBuffer mVertexBuffer;
     private final ShortBuffer mIndexBuffer;
     private final FloatBuffer mTexBuffer;
 
-    public DrawModel(Context context, int resId)
-    {
+    public DrawModel(Context context, int resId) {
         ArrayList<String> vertexes = new ArrayList<String>();
         ArrayList<String> textures = new ArrayList<String>();
         ArrayList<String> faces = new ArrayList<String>();
@@ -43,12 +36,13 @@ public class DrawModel
         BufferedReader bReader = new BufferedReader(isr);
         String line;
         try {
-            while (( line = bReader.readLine()) != null) {
+            while ((line = bReader.readLine()) != null) {
                 if (line.startsWith("v ")) vertexes.add(line.substring(2));
                 if (line.startsWith("vt ")) textures.add(line.substring(3));
                 if (line.startsWith("f ")) faces.add(line.substring(2));
             }
         } catch (IOException e) {
+            e.printStackTrace();
         }
 
         vCoords = new float[faces.size() * 3 * 3];
@@ -56,24 +50,26 @@ public class DrawModel
         iCoords = new short[faces.size() * 3];
 
         // for each face
-        for (int i = 0; i < faces.size(); i++) {
-            String[] faceSplit = faces.get(i).split(" ");
+        for (String i : faces) {
+            String[] faceSplit = i.split(" ");
             // for each face component
-            for (int j = 0; j < faceSplit.length; j++) {
-                iCoords[faceIndex] = (short)faceIndex;
+            for (String j : faceSplit) {
+                iCoords[faceIndex] = (short) faceIndex;
                 faceIndex++;
-                String[] faceComponent = faceSplit[j].split("/");
+                String[] faceComponent = j.split("/");
 
-                String vertex = vertexes.get(Integer.parseInt(faceComponent[0])-1);
-                String texture = textures.get(Integer.parseInt(faceComponent[1])-1);
+                String vertex = vertexes.get(Integer.parseInt(faceComponent[0]) - 1);
+                String texture = textures.get(Integer.parseInt(faceComponent[1]) - 1);
                 String vertexComp[] = vertex.split(" ");
                 String textureComp[] = texture.split(" ");
-                for (int v = 0; v < vertexComp.length; v++) {
-                    vCoords[vertexIndex] = Float.parseFloat(vertexComp[v]);
+
+                for (String v : vertexComp) {
+                    vCoords[vertexIndex] = Float.parseFloat(v);
                     vertexIndex++;
                 }
-                for (int t = 0; t < textureComp.length; t++) {
-                    tCoords[textureIndex] = Float.parseFloat(textureComp[t]);
+
+                for (String t : textureComp) {
+                    tCoords[textureIndex] = Float.parseFloat(t);
                     textureIndex++;
                 }
             }
@@ -85,8 +81,7 @@ public class DrawModel
 
     }
 
-    private FloatBuffer makeFloatBuffer(float[] arr)
-    {
+    private FloatBuffer makeFloatBuffer(float[] arr) {
         ByteBuffer bb = ByteBuffer.allocateDirect(arr.length * 4);
         bb.order(ByteOrder.nativeOrder());
         FloatBuffer fb = bb.asFloatBuffer();
@@ -95,8 +90,7 @@ public class DrawModel
         return fb;
     }
 
-    private ShortBuffer makeShortBuffer(short[] arr)
-    {
+    private ShortBuffer makeShortBuffer(short[] arr) {
         ByteBuffer bb = ByteBuffer.allocateDirect(arr.length * 4);
         bb.order(ByteOrder.nativeOrder());
         ShortBuffer ib = bb.asShortBuffer();
@@ -105,8 +99,7 @@ public class DrawModel
         return ib;
     }
 
-    public void draw(GL10 gl)
-    {
+    public void draw(GL10 gl) {
         gl.glFrontFace(GL10.GL_CCW);
         gl.glVertexPointer(3, GL10.GL_FLOAT, 0, mVertexBuffer);
         gl.glTexCoordPointer(2, GL10.GL_FLOAT, 0, mTexBuffer);
