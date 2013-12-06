@@ -15,21 +15,21 @@ import java.util.ArrayList;
 import javax.microedition.khronos.opengles.GL10;
 
 public class DrawModel {
+    private final int NUM_FACE_VERTICES = 3;
+    private final int NUM_VERTEX_COORDS = 3;
+    private final int NUM_TEX_COORDS = 2;
     private final FloatBuffer mVertexBuffer;
     private final ShortBuffer mIndexBuffer;
     private final FloatBuffer mTexBuffer;
 
     public DrawModel(Context context, int resId) {
+
+        // read in all the lines and put in their respective arraylists of strings
+        // reason I do this is to get a count of the faces to be used to initialize the
+        // float arrays
         ArrayList<String> vertexes = new ArrayList<String>();
         ArrayList<String> textures = new ArrayList<String>();
         ArrayList<String> faces = new ArrayList<String>();
-
-        float[] vCoords;
-        short[] iCoords;
-        float[] tCoords;
-        int vertexIndex = 0;
-        int faceIndex = 0;
-        int textureIndex = 0;
 
         InputStream iStream = context.getResources().openRawResource(resId);
         InputStreamReader isr = new InputStreamReader(iStream);
@@ -37,6 +37,7 @@ public class DrawModel {
         String line;
         try {
             while ((line = bReader.readLine()) != null) {
+                // do not read in the leading v, vt or f
                 if (line.startsWith("v ")) vertexes.add(line.substring(2));
                 if (line.startsWith("vt ")) textures.add(line.substring(3));
                 if (line.startsWith("f ")) faces.add(line.substring(2));
@@ -45,17 +46,19 @@ public class DrawModel {
             e.printStackTrace();
         }
 
-        vCoords = new float[faces.size() * 3 * 3];
-        tCoords = new float[faces.size() * 3 * 2];
-        iCoords = new short[faces.size() * 3];
+        // holding arrays for the vertices, texture coords and indexes
+        float[] vCoords = new float[faces.size() * NUM_FACE_VERTICES * NUM_VERTEX_COORDS];
+        float[] tCoords = new float[faces.size() * NUM_FACE_VERTICES * NUM_TEX_COORDS];
+        short[] iCoords = new short[faces.size() * NUM_FACE_VERTICES];
 
+        int vertexIndex = 0;
+        int faceIndex = 0;
+        int textureIndex = 0;
         // for each face
         for (String i : faces) {
-            String[] faceSplit = i.split(" ");
             // for each face component
-            for (String j : faceSplit) {
-                iCoords[faceIndex] = (short) faceIndex;
-                faceIndex++;
+            for (String j : i.split(" ")) {
+                iCoords[faceIndex] = (short) faceIndex++;
                 String[] faceComponent = j.split("/");
 
                 String vertex = vertexes.get(Integer.parseInt(faceComponent[0]) - 1);
@@ -64,17 +67,16 @@ public class DrawModel {
                 String textureComp[] = texture.split(" ");
 
                 for (String v : vertexComp) {
-                    vCoords[vertexIndex] = Float.parseFloat(v);
-                    vertexIndex++;
+                    vCoords[vertexIndex++] = Float.parseFloat(v);
                 }
 
                 for (String t : textureComp) {
-                    tCoords[textureIndex] = Float.parseFloat(t);
-                    textureIndex++;
+                    tCoords[textureIndex++] = Float.parseFloat(t);
                 }
             }
         }
 
+        // create the final buffers
         mVertexBuffer = makeFloatBuffer(vCoords);
         mIndexBuffer = makeShortBuffer(iCoords);
         mTexBuffer = makeFloatBuffer(tCoords);
@@ -101,8 +103,8 @@ public class DrawModel {
 
     public void draw(GL10 gl) {
         gl.glFrontFace(GL10.GL_CCW);
-        gl.glVertexPointer(3, GL10.GL_FLOAT, 0, mVertexBuffer);
-        gl.glTexCoordPointer(2, GL10.GL_FLOAT, 0, mTexBuffer);
+        gl.glVertexPointer(NUM_VERTEX_COORDS, GL10.GL_FLOAT, 0, mVertexBuffer);
+        gl.glTexCoordPointer(NUM_TEX_COORDS, GL10.GL_FLOAT, 0, mTexBuffer);
         gl.glDrawElements(GL10.GL_TRIANGLES, mIndexBuffer.remaining(), GL10.GL_UNSIGNED_SHORT, mIndexBuffer);
     }
 }
